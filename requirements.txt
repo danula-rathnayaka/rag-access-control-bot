@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+langchain
+langchain_community
+langchain-groq
+dotenv
+chromadb
+sqlalchemy
+chromadb
+streamlit
+sentence-transformers>=2.3.0
+transformers
+torch
+langchain-huggingface
+python-multipart
