@@ -1,5 +1,7 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+from services.chat_memory_service import ChatMemoryService
+from services.llm_service import generate_response
 from services.embedding_service import EmbeddingService
 from services.user_database_service import UserDatabaseService
 from services.vector_db_service import VectorStore
@@ -11,6 +13,7 @@ class ChatbotManager:
         self.user_db = UserDatabaseService()
         self.vector_store = VectorStore()
         self.embedding_service = EmbeddingService()
+        self.memory_service = ChatMemoryService()
 
     def authenticate_user(self, username, password):
         user = self.user_db.get_user(username)
@@ -55,6 +58,17 @@ class ChatbotManager:
 
         return "Saved Successfully"
 
-    def chat(self, message, username):
-        # TODO
-        pass
+    async def chat(self, message, username, role):
+        retrieved_contexts = self.vector_store.query(
+            query_embeddings=self.embedding_service.get_embedding(
+                query=message
+            ),
+            where={'role_access': {'$in': [role, 'general']}},
+            n_results=3
+        )
+        response = await generate_response(user_query=message,
+                                           retrieved_contexts=retrieved_contexts['documents'],
+                                           memory=self.memory_service.get_memory(username)
+                                           )
+        return {"response": response, "source_locations": retrieved_contexts["ids"],
+                "source_content": retrieved_contexts["documents"]}
