@@ -48,7 +48,8 @@ def save_data():
 
 # Protected chat endpoint
 @app.post("/chat")
-def query(message: str, user=Depends(authenticate)):
+async def query(message: str, user=Depends(authenticate)):
     username = user["username"]
-    response = chatbot_manager.chat(message, username)
+    role = user["role"]
+    response = await chatbot_manager.chat(message, str(username), str(role))
     return {"message": response}

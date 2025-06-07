@@ -28,7 +28,7 @@ async def generate_response(
         *memory.load_memory_variables({})["chat_history"],
         ("human", f"""
         Context:
-        {"\n".join(retrieved_contexts)}
+        {"\n".join(str(item) for item in retrieved_contexts)}
         
         Question:
         {user_query}
