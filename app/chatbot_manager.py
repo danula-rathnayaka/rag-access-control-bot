@@ -72,3 +72,15 @@ class ChatbotManager:
                                            )
         return {"response": response, "source_locations": retrieved_contexts["ids"],
                 "source_content": retrieved_contexts["documents"]}
+
+    def add_user(self, username, password, role):
+        self.user_db.add_user(username, password, role)
+        return "User added successfully"
+
+    def update_user(self, username, password, role):
+        self.user_db.update_user(username, password, role)
+        return "User updated successfully"
+
+    def delete_user(self, username):
+        self.user_db.delete_user(username)
+        return "User deleted successfully"

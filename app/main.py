@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Body
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 from chatbot_manager import ChatbotManager
@@ -15,7 +15,6 @@ async def startup_event():
     chatbot_manager = ChatbotManager()
 
 
-# Authentication dependency
 def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
     user_role = chatbot_manager.authenticate_user(credentials.username, credentials.password)
     if user_role is None:
@@ -23,21 +22,24 @@ def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
     return {"username": credentials.username, "role": user_role}
 
 
-# Login endpoint
+@app.get("/")
+def test():
+    return {"message": "Hi there. Please login to chat. Use /login"}
+
+
 @app.get("/login")
 def login(user=Depends(authenticate)):
     return {"message": f"Welcome {user['username']}!", "role": user["role"]}
 
 
-# Protected test endpoint
+@app.post("/logout")
+def logout(user=Depends(authenticate)):
+    return {"message": f"Goodbye {user['username']}! You've been logged out."}
+
+
 @app.get("/test")
 def test(user=Depends(authenticate)):
     return {"message": f"Hello {user['username']}! You can now chat.", "role": user["role"]}
-
-
-@app.get("/")
-def test():
-    return {"message": "Hi there. Please login to chat. Use /login"}
 
 
 @app.get("/save_folder_data")
@@ -46,10 +48,34 @@ def save_data():
     return {"message": message}
 
 
-# Protected chat endpoint
 @app.post("/chat")
 async def query(message: str, user=Depends(authenticate)):
     username = user["username"]
     role = user["role"]
     response = await chatbot_manager.chat(message, str(username), str(role))
     return {"message": response}
+
+
+@app.post("/users/add")
+def add_user(username: str = Body(...), password: str = Body(...), role: str = Body(...), user=Depends(authenticate)):
+    if user["role"] != "hr":
+        raise HTTPException(status_code=403, detail="Only admin can add users.")
+    message = chatbot_manager.add_user(username, password, role)
+    return {"message": message}
+
+
+@app.put("/users/update")
+def update_user(username: str = Body(...), password: str = Body(None), role: str = Body(None),
+                user=Depends(authenticate)):
+    if user["role"] != "hr":
+        raise HTTPException(status_code=403, detail="Only admin can update users.")
+    message = chatbot_manager.update_user(username, password, role)
+    return {"message": message}
+
+
+@app.delete("/users/delete")
+def delete_user(username: str = Body(...), user=Depends(authenticate)):
+    if user["role"] != "hr":
+        raise HTTPException(status_code=403, detail="Only admin can delete users.")
+    message = chatbot_manager.delete_user(username)
+    return {"message": message}
